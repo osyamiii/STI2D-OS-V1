@@ -1,0 +1,507 @@
+<title>STI2D vs STMG</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Jeu d'action en pixel art : STi2D, petit diable échappé de l'Enfer, traverse le Purgatoire pour renverser STMG.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Rubik:wght@400;600&display=swap">
+<style>
+  /* Une console portable en plastique lie-de-vin : écran en haut, croix et boutons en bas
+     (portrait), ou croix | écran | boutons quand le téléphone est tourné (paysage). */
+  :root {
+    --night: #13091a;        /* fond de page, nuit infernale */
+    --shell: #7a1729;        /* plastique de la console */
+    --shell-hi: #9c2638;
+    --shell-lo: #4a0c19;
+    --bezel: #1c1320;        /* cadre de l'écran */
+    --gold: #f6c945;         /* accents, comme le jaune du jeu */
+    --ink: #f7e9ec;
+    --muted: #d9a7b3;
+    --key: #26141e;          /* croix et boutons sombres */
+    --key-hi: #3b2230;
+    --font-pixel: "Silkscreen", "Courier New", monospace;
+    --font-body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(120% 70% at 50% 0%, #2a0f22 0%, transparent 60%),
+      var(--night);
+    color: var(--ink);
+    font-family: var(--font-body);
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stage {
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-block: 10px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  /* ---------- la console ---------- */
+  .console {
+    --screen-w: min(100%, calc((100dvh - 330px) * 4 / 3));
+    width: min(100%, 460px);
+    box-sizing: border-box;
+    display: grid;
+    grid-template-areas: "screen screen" "dpad face" "meta meta";
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 18px 8px;
+    padding: 18px 18px 16px;
+    border-radius: 22px 22px 64px 22px;
+    background: linear-gradient(160deg, var(--shell-hi) 0%, var(--shell) 38%, var(--shell-lo) 100%);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -6px 0 rgba(0, 0, 0, 0.28),
+      0 24px 60px rgba(0, 0, 0, 0.55);
+  }
+  .bezel {
+    grid-area: screen;
+    justify-self: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px 8px;
+    border-radius: 10px 10px 28px 10px;
+    background: var(--bezel);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.5), inset 0 3px 8px rgba(0, 0, 0, 0.6);
+  }
+  .bezel-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .bezel-top .line { flex: 1; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); opacity: 0.55; }
+  .bezel-top .line.rev { background: linear-gradient(270deg, var(--gold), transparent); }
+  .led { width: 7px; height: 7px; border-radius: 50%; background: #ff3b4e; box-shadow: 0 0 8px #ff3b4e; }
+  canvas {
+    display: block;
+    width: var(--screen-w);
+    max-width: 100%;
+    aspect-ratio: 4 / 3;
+    margin: 0 auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #000;
+    border-radius: 2px;
+  }
+  .brand {
+    margin-top: 7px;
+    text-align: center;
+    font-family: var(--font-pixel);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+  }
+  .brand span { color: var(--muted); font-weight: 400; }
+
+  /* ---------- croix directionnelle ---------- */
+  .dpad {
+    grid-area: dpad;
+    justify-self: center;
+    position: relative;
+    width: 138px;
+    aspect-ratio: 1;
+    touch-action: none;
+  }
+  .dpad::before { /* creux moulé autour de la croix */
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.16);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  }
+  .arm {
+    position: absolute;
+    background: var(--key);
+    box-shadow: 0 3px 0 #0d060a;
+    transition: background 60ms;
+  }
+  .arm.up, .arm.down { left: 34%; width: 32%; height: 38%; }
+  .arm.left, .arm.right { top: 34%; height: 32%; width: 38%; }
+  .arm.up { top: 4%; border-radius: 6px 6px 0 0; }
+  .arm.down { bottom: 4%; border-radius: 0 0 6px 6px; }
+  .arm.left { left: 4%; border-radius: 6px 0 0 6px; }
+  .arm.right { right: 4%; border-radius: 0 6px 6px 0; }
+  .hub { position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; background: var(--key); }
+  .hub::after { content: ""; position: absolute; inset: 28%; border-radius: 50%; background: radial-gradient(#1a0d14, var(--key-hi)); }
+  .arm::after { /* flèche gravée */
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    border: 6px solid transparent;
+    transform: translate(-50%, -50%);
+  }
+  .arm.up::after { border-bottom-color: #4d3140; border-top-width: 0; }
+  .arm.down::after { border-top-color: #4d3140; border-bottom-width: 0; }
+  .arm.left::after { border-right-color: #4d3140; border-left-width: 0; }
+  .arm.right::after { border-left-color: #4d3140; border-right-width: 0; }
+  .arm.on { background: var(--key-hi); box-shadow: 0 1px 0 #0d060a; transform: translateY(2px); }
+
+  /* ---------- boutons A / B ---------- */
+  .face {
+    grid-area: face;
+    justify-self: center;
+    position: relative;
+    width: 150px;
+    height: 120px;
+    touch-action: none;
+  }
+  .btn {
+    position: absolute;
+    width: 62px;
+    height: 62px;
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    font-family: var(--font-pixel);
+    font-weight: 700;
+    font-size: 22px;
+    cursor: pointer;
+    touch-action: none;
+    transition: transform 60ms, box-shadow 60ms;
+  }
+  .btn small {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .btn.a { right: 2px; top: 0; background: radial-gradient(circle at 35% 30%, #ffe48a, var(--gold) 55%, #b98a12); color: #4a2a00; box-shadow: 0 5px 0 #6e4f06, 0 8px 14px rgba(0,0,0,.35); }
+  .btn.b { left: 2px; top: 34px; background: radial-gradient(circle at 35% 30%, #4b2c3c, var(--key) 60%); color: var(--muted); box-shadow: 0 5px 0 #0d060a, 0 8px 14px rgba(0,0,0,.35); }
+  .btn.on { transform: translateY(4px); }
+  .btn.a.on { box-shadow: 0 1px 0 #6e4f06; }
+  .btn.b.on { box-shadow: 0 1px 0 #0d060a; }
+
+  /* ---------- pilules du bas ---------- */
+  .meta {
+    grid-area: meta;
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+  }
+  .pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    touch-action: none;
+  }
+  .pill::before {
+    content: "";
+    width: 46px;
+    height: 12px;
+    border-radius: 8px;
+    background: var(--key);
+    box-shadow: 0 2px 0 #0d060a;
+    transform: rotate(-22deg);
+  }
+  .pill.on::before { background: var(--key-hi); transform: rotate(-22deg) translateY(2px); box-shadow: none; }
+  .pill:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+  /* ---------- aide clavier (ordinateurs) ---------- */
+  .help {
+    display: none;
+    max-width: 460px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--muted);
+    text-wrap: balance;
+  }
+  .help kbd {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #2a1622;
+    color: var(--ink);
+    box-shadow: 0 2px 0 #0d060a;
+  }
+  @media (pointer: fine) and (min-height: 760px) { .help { display: block; } }
+
+  /* Téléphone tourné : croix | écran | boutons */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .stage { padding-block: 6px; }
+    .console {
+      --screen-w: min(calc(100vw - 400px), calc((100dvh - 92px) * 4 / 3));
+      width: auto;
+      max-width: 100%;
+      grid-template-areas: "dpad screen face" "dpad meta face";
+      grid-template-columns: auto auto auto;
+      gap: 6px 16px;
+      padding: 10px 16px;
+      border-radius: 28px;
+    }
+    .bezel { padding: 6px 8px 4px; }
+    .bezel-top { display: none; }
+    .brand { font-size: 10px; margin-top: 4px; }
+    .dpad { width: 128px; }
+    .face { width: 140px; }
+  }
+  @media (max-height: 640px) and (orientation: portrait) {
+    .console { gap: 10px 8px; padding: 12px 14px 12px; }
+    .dpad { width: 120px; }
+    .face { height: 110px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arm, .btn { transition: none; }
+  }
+</style>
+<!--BODY-->
+<main class="stage">
+  <div class="console" id="console">
+    <div class="bezel">
+      <div class="bezel-top"><span class="led" aria-hidden="true"></span><span class="line"></span><span>Purgatoire · 320×240</span><span class="line rev"></span></div>
+      <canvas id="screen" width="320" height="240" aria-label="Écran du jeu STI2D vs STMG"></canvas>
+      <div class="brand">STI2D <span>vs</span> STMG</div>
+    </div>
+
+    <div class="dpad" id="dpad" role="group" aria-label="Croix directionnelle">
+      <div class="arm up" data-dir="1"></div>
+      <div class="arm left" data-dir="0"></div>
+      <div class="hub"></div>
+      <div class="arm right" data-dir="3"></div>
+      <div class="arm down" data-dir="2"></div>
+    </div>
+
+    <div class="face">
+      <button class="btn b" id="btnB" data-key="5" aria-label="B : Back (pause, retour)">B<small>BACK</small></button>
+      <button class="btn a" id="btnA" data-key="4" aria-label="A : OK (attaquer, valider)">A<small>OK</small></button>
+    </div>
+
+    <div class="meta">
+      <button class="pill" id="pause" data-key="5">PAUSE</button>
+      <button class="pill" id="full">PLEIN ÉCRAN</button>
+    </div>
+  </div>
+
+  <p class="help">
+    Clavier : <kbd>←↑↓→</kbd> ou <kbd>ZQSD</kbd> pour bouger,
+    <kbd>Espace</kbd> / <kbd>Entrée</kbd> = A (OK, maintenu pour tir continu),
+    <kbd>Échap</kbd> = B (pause, retour). Manette compatible.
+  </p>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const K = { LEFT: 0, UP: 1, DOWN: 2, RIGHT: 3, OK: 4, BACK: 5 };
+  const WASM = "__WASM_BASE64__";
+  const SAVE_KEY = "sti2d_vs_stmg.save.v1";
+
+  // ---------- entrées : chaque source tient ses propres touches, on fait l'union ----------
+  const sources = new Map();  // id -> masque
+  let kbMask = 0, padMask = 0;
+  // Un appui très bref (tap, touche relâchée aussitôt) doit durer au moins un tick du jeu.
+  let pulse = 0;
+  const setSource = (id, mask) => { pulse |= mask; if (mask) sources.set(id, mask); else sources.delete(id); };
+  const allKeys = () => { let m = kbMask | padMask | pulse; for (const v of sources.values()) m |= v; return m; };
+  const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
+
+  // Clavier (AZERTY et QWERTY)
+  const KEYMAP = {
+    ArrowLeft: K.LEFT, ArrowUp: K.UP, ArrowDown: K.DOWN, ArrowRight: K.RIGHT,
+    KeyA: K.LEFT, KeyQ: K.LEFT, KeyW: K.UP, KeyZ: K.UP, KeyS: K.DOWN, KeyD: K.RIGHT,
+    Space: K.OK, Enter: K.OK, NumpadEnter: K.OK, KeyK: K.OK, KeyJ: K.OK,
+    Escape: K.BACK, Backspace: K.BACK, KeyP: K.BACK, KeyL: K.BACK,
+  };
+  addEventListener("keydown", e => {
+    const k = KEYMAP[e.code];
+    if (k === undefined || e.ctrlKey || e.metaKey || e.altKey) return;
+    e.preventDefault();
+    kbMask |= 1 << k;
+    pulse |= 1 << k;
+  });
+  addEventListener("keyup", e => {
+    const k = KEYMAP[e.code];
+    if (k !== undefined) kbMask &= ~(1 << k);
+  });
+  const releaseAll = () => { kbMask = 0; padMask = 0; sources.clear(); };
+  addEventListener("blur", releaseAll);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
+
+  // Croix tactile : 8 directions selon l'angle depuis le centre, on peut glisser le doigt.
+  const dpad = document.getElementById("dpad");
+  const dpadMask = (e) => {
+    const r = dpad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    if (Math.hypot(dx, dy) < r.width * 0.1) return 0;
+    const a = Math.atan2(dy, dx), oct = (Math.round(a / (Math.PI / 4)) + 8) % 8;
+    // 0 droite, 1 bas-droite, 2 bas, 3 bas-gauche, 4 gauche, 5 haut-gauche, 6 haut, 7 haut-droite
+    const DIRS = [[K.RIGHT], [K.DOWN, K.RIGHT], [K.DOWN], [K.DOWN, K.LEFT], [K.LEFT], [K.UP, K.LEFT], [K.UP], [K.UP, K.RIGHT]];
+    return DIRS[oct].reduce((m, k) => m | (1 << k), 0);
+  };
+  dpad.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    dpad.setPointerCapture(e.pointerId);
+    setSource("d" + e.pointerId, dpadMask(e));
+    buzz();
+  });
+  dpad.addEventListener("pointermove", e => {
+    if (!sources.has("d" + e.pointerId) && !dpad.hasPointerCapture(e.pointerId)) return;
+    const m = dpadMask(e), id = "d" + e.pointerId;
+    if (m !== (sources.get(id) || 0)) { setSource(id, m); if (m) buzz(); }
+  });
+  for (const ev of ["pointerup", "pointercancel", "lostpointercapture"])
+    dpad.addEventListener(ev, e => setSource("d" + e.pointerId, 0));
+
+  // Boutons A, B et Pause
+  for (const el of document.querySelectorAll("[data-key]")) {
+    const bit = 1 << Number(el.dataset.key);
+    el.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      setSource(el.id + e.pointerId, bit);
+      buzz();
+    });
+    for (const ev of ["pointerup", "pointercancel", "lostpointercapture"])
+      el.addEventListener(ev, e => setSource(el.id + e.pointerId, 0));
+    // Activation au clavier (Tab + Entrée) : un appui bref
+    el.addEventListener("click", e => {
+      if (e.detail !== 0) return;
+      setSource(el.id + "kb", bit);
+      setTimeout(() => setSource(el.id + "kb", 0), 80);
+    });
+  }
+  addEventListener("contextmenu", e => e.preventDefault());
+
+  // Plein écran (refusé dans certains cadres : on masque le bouton)
+  const full = document.getElementById("full");
+  if (!document.fullscreenEnabled) full.hidden = true;
+  full.addEventListener("click", () => {
+    const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    if (p && p.catch) p.catch(() => { full.hidden = true; });
+  });
+
+  // Manette (API Gamepad)
+  const pollPad = () => {
+    padMask = 0;
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (const p of pads) {
+      if (!p) continue;
+      const b = i => p.buttons[i] && p.buttons[i].pressed;
+      const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
+      if (b(14) || ax < -0.4) padMask |= 1 << K.LEFT;
+      if (b(15) || ax > 0.4) padMask |= 1 << K.RIGHT;
+      if (b(12) || ay < -0.4) padMask |= 1 << K.UP;
+      if (b(13) || ay > 0.4) padMask |= 1 << K.DOWN;
+      if (b(0) || b(2) || b(7)) padMask |= 1 << K.OK;
+      if (b(1) || b(9) || b(8)) padMask |= 1 << K.BACK;
+    }
+  };
+
+  // Retour visuel des touches (tactile, clavier ou manette)
+  const arms = [...dpad.querySelectorAll(".arm")];
+  const btnA = document.getElementById("btnA"), btnB = document.getElementById("btnB"), pause = document.getElementById("pause");
+  let shown = -1;
+  const showKeys = m => {
+    if (m === shown) return;
+    shown = m;
+    for (const a of arms) a.classList.toggle("on", !!(m & (1 << Number(a.dataset.dir))));
+    btnA.classList.toggle("on", !!(m & (1 << K.OK)));
+    btnB.classList.toggle("on", !!(m & (1 << K.BACK)));
+    pause.classList.toggle("on", !!(m & (1 << K.BACK)));
+  };
+
+  // ---------- moteur WebAssembly ----------
+  const canvas = document.getElementById("screen");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const img = ctx.createImageData(320, 240);
+  const px32 = new Uint32Array(img.data.buffer);
+  const lut = new Uint32Array(65536);  // RGB565 -> RGBA
+  for (let c = 0; c < 65536; c++) {
+    const r = ((c >> 11) << 3) | (c >> 13), g = (((c >> 5) & 63) << 2) | ((c >> 9) & 3), b = ((c & 31) << 3) | ((c >> 2) & 7);
+    lut[c] = 0xff000000 | (b << 16) | (g << 8) | r;
+  }
+
+  const bytes = Uint8Array.from(atob(WASM), ch => ch.charCodeAt(0));
+  WebAssembly.instantiate(bytes, { env: { sinf: Math.sin, cosf: Math.cos, atan2f: Math.atan2 } })
+    .then(({ instance }) => start(instance.exports));
+
+  function start(G) {
+  const seed = () => (Math.random() * 0xffffffff) >>> 0 || 1;
+  G.init(seed());
+
+  // Sauvegarde locale : record, difficulté et classement (propre à ce navigateur)
+  let lastSave = "";
+  try {
+    const s = localStorage.getItem(SAVE_KEY);
+    if (s) {
+      const data = Uint8Array.from(atob(s), ch => ch.charCodeAt(0));
+      new Uint8Array(G.memory.buffer, G.save_buf(), data.length).set(data);
+      G.load(data.length);
+      lastSave = s;
+    }
+  } catch (e) {}
+  const persist = () => {
+    const n = G.save();
+    if (!n) return;
+    const s = btoa(String.fromCharCode(...new Uint8Array(G.memory.buffer, G.save_buf(), n)));
+    if (s === lastSave) return;
+    try { localStorage.setItem(SAVE_KEY, s); lastSave = s; } catch (e) {}
+  };
+
+  const draw = () => {
+    const fb = new Uint16Array(G.memory.buffer, G.frame(), 320 * 240);
+    for (let i = 0; i < fb.length; i++) px32[i] = lut[fb[i]];
+    ctx.putImageData(img, 0, 0);
+  };
+
+  // Logique à 30 Hz fixes, comme sur la calculatrice (1 tick = 100 unités de 1/3 ms)
+  let last = performance.now(), acc = 0, ticks = 0;
+  const loop = now => {
+    acc += (now - last) * 3;
+    last = now;
+    if (acc > 400) acc = 400;
+    if (acc >= 100) {
+      pollPad();
+      const keys = allKeys();
+      pulse = 0;
+      showKeys(keys);
+      while (acc >= 100) {
+        acc -= 100;
+        if (!G.update(keys)) G.init(seed());  // « Back » sur le titre : on reste sur le titre
+        if (++ticks % 60 === 0) persist();
+      }
+      draw();
+    }
+    requestAnimationFrame(loop);
+  };
+  draw();
+  requestAnimationFrame(loop);
+  addEventListener("pagehide", persist);
+  }
+})();
+</script>

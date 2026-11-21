@@ -1,0 +1,19 @@
+--- a/Makefile	2026-10-27 02:08:54.000000000 +0000
++++ b/Makefile	2026-10-27 03:10:37.872861867 +0000
+@@ -473,3 +473,16 @@
+ 	-$(MAKE) -C games/fnf clean
+ 	-cd games/tetris/tetris && $(CARGO) clean
+ 	-$(foreach g,$(STD_GAMES),$(MAKE) -C games/$(g) clean;)
++
++# ------------------------------------------------------------------ STI2D-Play for STI2D OS
++# The STI2D-Play preinstalled in STI2D OS on the N0120: the games that fit the 2.37 MB the
++# custom build of the calculator software leaves for apps (Among Us, NumDash, NumBlocks and
++# Buckshot Roulette install on their own).
++LITE_GAMES = matrices asphalt backrooms rider stmg crossyroad balatro blockblast suika tetris dinorun doodlejump \
++  chess flappybird pacman snake connectfour solitaire g2048 minesweeper breakout invaders sudoku sokoban
++$(B)/gen-lite/numplay.ld: games/games.json tools/gen_games.py $(foreach g,$(LITE_GAMES),$(B)/modules/$(g).o)
++	$(PY) tools/gen_games.py games/games.json $(B)/modules $(B)/gen-lite --only "$(LITE_GAMES)"
++$(B)/STI2D-Play-Lite.nwa: $(KIT)/base.o $(B)/arm/arena.o $(foreach g,$(LITE_GAMES),$(KIT)/games/$(g).o) \
++  $(B)/variant/STI2D-Play-name.o $(B)/variant/STI2D-Play-icon.o $(B)/gen-lite/numplay.ld
++	$(ARM_LD) $(KIT_LINK) -T $(B)/gen-lite/numplay.ld $(filter %.o,$^) -o $@
++	arm-none-eabi-strip --strip-unneeded $@

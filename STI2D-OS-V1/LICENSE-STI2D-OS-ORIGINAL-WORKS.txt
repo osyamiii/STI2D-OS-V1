@@ -1,0 +1,26 @@
+STI2D-OS — AVIS DE DROITS SUR LES CRÉATIONS ORIGINALES
+
+Auteurs / titulaires déclarés :
+- Yamii — Discord : cjnw
+- Derim — Discord : irationnel
+Serveur officiel : https://discord.gg/sti2d
+
+© 2026 Yamii et Derim — Tous droits réservés sur leurs créations originales identifiables
+(intégration, identité visuelle, textes, éléments graphiques et code original dont ils
+sont effectivement les auteurs), sous réserve des droits de tiers et des licences
+indiquées dans le projet.
+
+Sauf autorisation écrite préalable des titulaires, aucune licence n'est accordée pour
+réutiliser, republier, vendre ou présenter comme siennes les créations originales
+protégées de STI2D-OS. Les droits impératifs prévus par la loi restent applicables.
+
+IMPORTANT — Cette notice ne remplace ni n'annule les licences des composants tiers.
+Elle ne s'applique PAS aux éléments distribués sous GPL, MIT, OFL ou toute autre
+licence identifiée dans leurs fichiers respectifs. Les composants Epsilon/NumWorks,
+NumPlay, les jeux, polices, bibliothèques et médias tiers gardent leurs licences,
+avis de copyright et obligations propres. En cas de conflit, la licence du composant
+concerné prévaut pour ce composant.
+
+Cette notice est une déclaration de droits sur les seules contributions originales
+attribuables à leurs auteurs ; elle ne constitue pas une garantie juridique sur la
+provenance de chaque fichier du paquet. Conservez les historiques et preuves de création.

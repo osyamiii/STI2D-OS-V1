@@ -1,0 +1,19 @@
+PROTECTION WEB — LIMITES ET CONFIGURATION
+
+Un fichier HTML autonome qui contient son JavaScript/CSS doit transmettre ces données
+au navigateur. Toute personne qui ouvre la page peut donc consulter ou copier ces
+ressources avec les outils développeur, même si F12, le clic droit ou le menu contextuel
+sont bloqués. Cette archive ne prétend pas rendre le code impossible à copier.
+
+Mesures raisonnables pour un hébergement Apache (fichier .htaccess) :
+- désactiver l'indexation des dossiers ;
+- empêcher l'intégration dans une frame ;
+- ajouter des en-têtes de sécurité de base.
+
+Ces en-têtes réduisent certains risques de sécurité, mais ne cachent pas le code livré
+au navigateur. Ne placez jamais de mot de passe, clé privée, jeton secret ou logique
+confidentielle dans le HTML/JavaScript. Une vraie protection des fonctions sensibles
+nécessite un backend, une authentification et des contrôles d'accès côté serveur.
+
+Pour l'installateur hors ligne, les fonctions de transfert vers la calculatrice doivent
+rester exécutables localement : les déplacer côté serveur pourrait casser son usage.
